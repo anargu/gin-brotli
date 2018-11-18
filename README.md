@@ -14,7 +14,27 @@ Install Brotli, [see here](https://github.com/google/brotli).
 
 ## How to use
 
-    TODO
+    package main
+
+    import (
+        "fmt"
+        "time"
+	    "net/http"
+
+        brotli "github.com/anargu/gin-brotli"
+        "github.com/gin-gonic/gin"
+    )
+
+    func main() {
+        r := gin.Default()
+        r.Use(brotli.Brotli(brotli.DefaultCompression))
+        r.GET("/hello", func(c *gin.Context) {
+            c.String(http.StatusOK, fmt.Sprintf("World at %s", time.Now()))
+        })
+
+        // Listen and Server in 0.0.0.0:8080
+        r.Run(":8080")
+    }
 
 ## TODO
 
