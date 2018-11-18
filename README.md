@@ -10,7 +10,7 @@ Install Brotli, [see here](https://github.com/google/brotli).
 
 ## Install
 
-    TODO
+    go get https://github.com/anargu/gin-brotli
 
 ## How to use
 
