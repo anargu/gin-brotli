@@ -30,9 +30,10 @@ func (br *brotliWriter) WriteHeader(code int) {
 }
 
 var (
-	// DefaultCompression Quality: 10 LGWin: 11
+	// DefaultCompression Quality: 4 LGWin: 11
+	// from 0-11. 4 will bring the files faster than 11. the higher quality the slower compression time
 	DefaultCompression = Options{
-		Quality: 10,
+		Quality: 4,
 		LGWin:   11,
 	}
 )
