@@ -49,7 +49,7 @@ func (s *rServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(rw, testReverseResponse)
 }
 
-func newServer() *gin.Engine {
+func newServerWithProxy() *gin.Engine {
 
 	// init reverse proxy server
 	rServer := httptest.NewServer(new(rServer))
@@ -69,13 +69,30 @@ func newServer() *gin.Engine {
 	return router
 }
 
+func newBenchmarkServer() *gin.Engine {
+	// init reverse proxy server
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(Brotli(DefaultCompression))
+	router.GET("/", func(c *gin.Context) {
+
+		data, err := ioutil.ReadFile("testdata/data.json")
+		if err != nil {
+			panic(err)
+		}
+		c.Header("Content-Length", strconv.Itoa(len(data)))
+		c.JSON(http.StatusOK, data)
+	})
+	return router
+}
+
 func TestBrotli(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.Header.Add("Accept-Encoding", "br")
 
 	w := httptest.NewRecorder()
-	r := newServer()
+	r := newServerWithProxy()
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, w.Code, 200)
@@ -85,17 +102,36 @@ func TestBrotli(t *testing.T) {
 	assert.NotEqual(t, len(testResponse), w.Body.Len())
 	assert.Equal(t, fmt.Sprint(w.Body.Len()), w.Header().Get("Content-Length"))
 
-	fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
-	fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
+	// fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
+	// fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
 
 	br := cbrotli.NewReader(w.Body)
 	defer br.Close()
 	body, _ := ioutil.ReadAll(br)
 
-	fmt.Printf("\n+++Test string(body)+++\n%s\n+++\n", string(body))
-	fmt.Printf("\n+++Test testJSONResponse+++\n%s\n+++\n", testJSONResponse)
+	// fmt.Printf("\n+++Test string(body)+++\n%s\n+++\n", string(body))
+	// fmt.Printf("\n+++Test testJSONResponse+++\n%s\n+++\n", testJSONResponse)
 
 	assert.Equal(t, string(body), testJSONResponse)
+}
+
+func BenchmarkBrotli(b *testing.B) {
+	b.StopTimer()
+
+	r := newBenchmarkServer()
+
+	for i := 0; i < b.N; i++ {
+		req, err := http.NewRequest(http.MethodGet, "/json", nil)
+		if err != nil {
+			b.Fatalf("could not create request %v", err)
+		}
+		req.Header.Add("Accept-Encoding", "br")
+
+		rec := httptest.NewRecorder()
+		b.StartTimer()
+		r.ServeHTTP(rec, req)
+		b.StopTimer()
+	}
 }
 
 func TestNotSupportBrotli(t *testing.T) {
@@ -104,7 +140,7 @@ func TestNotSupportBrotli(t *testing.T) {
 	req.Header.Add("Accept-Encoding", "gzip")
 
 	w := httptest.NewRecorder()
-	r := newServer()
+	r := newServerWithProxy()
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, w.Code, 200)
@@ -130,7 +166,7 @@ func TestBrotliWithReverseProxy(t *testing.T) {
 	req.Header.Add("Accept-Encoding", "br")
 
 	w := newCloseNotifyingRecorder()
-	r := newServer()
+	r := newServerWithProxy()
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, w.Code, 200)
