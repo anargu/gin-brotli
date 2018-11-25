@@ -8,9 +8,11 @@ NOTE: this repo is an adaptation of how gzip middleware is implemented. I'll try
 
 Install Brotli, [see here](https://github.com/google/brotli).
 
+Install brotli package for go (cbrotli). Copy [github.com/google/brotli/tree/master/go/cbrotli](github.com/google/brotli/tree/master/go/cbrotli) package into GOPATH/ directory
+
 ## Install
 
-    go get https://github.com/anargu/gin-brotli
+    go get github.com/anargu/gin-brotli
 
 ## How to use
 
