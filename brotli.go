@@ -1,13 +1,13 @@
 package brotli
 
 import (
-	"cbrotli"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/brotli/go/cbrotli"
 )
 
 type brotliWriter struct {
