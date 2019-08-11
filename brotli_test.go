@@ -1,7 +1,6 @@
 package brotli
 
 import (
-	"cbrotli"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -105,8 +105,7 @@ func TestBrotli(t *testing.T) {
 	// fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
 	// fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
 
-	br := cbrotli.NewReader(w.Body)
-	defer br.Close()
+	br := brotli.NewReader(w.Body)
 	body, _ := ioutil.ReadAll(br)
 
 	// fmt.Printf("\n+++Test string(body)+++\n%s\n+++\n", string(body))
@@ -178,8 +177,7 @@ func TestBrotliWithReverseProxy(t *testing.T) {
 	fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
 	fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
 
-	br := cbrotli.NewReader(w.Body)
-	defer br.Close()
+	br := brotli.NewReader(w.Body)
 	body, _ := ioutil.ReadAll(br)
 
 	fmt.Printf("\n+++Test string(body)+++\n%v\n+++\n", string(body))
