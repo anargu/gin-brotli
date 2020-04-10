@@ -1,18 +1,18 @@
 package brotli
 
 import (
-	"cbrotli"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
+	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
 )
 
 type brotliWriter struct {
 	gin.ResponseWriter
-	writer *cbrotli.Writer
+	writer *brotli.Writer
 }
 
 func (br *brotliWriter) WriteString(s string) (int, error) {
@@ -39,7 +39,7 @@ var (
 )
 
 // Options is a wrapper for cbrotli.WriterOptions
-type Options cbrotli.WriterOptions
+type Options brotli.WriterOptions
 
 // Brotli is a middleware function
 func Brotli(options Options) gin.HandlerFunc {
@@ -49,7 +49,7 @@ func Brotli(options Options) gin.HandlerFunc {
 			return
 		}
 
-		brWriter := cbrotli.NewWriter(c.Writer, cbrotli.WriterOptions{
+		brWriter := brotli.NewWriterOptions(c.Writer, brotli.WriterOptions{
 			Quality: options.Quality,
 			LGWin:   options.LGWin,
 		})
