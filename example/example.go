@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	br "gin-brotli"
+	br "github.com/anargu/gin_brotli"
 
 	"github.com/gin-gonic/gin"
 )
