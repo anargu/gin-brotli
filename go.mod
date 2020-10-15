@@ -1,4 +1,4 @@
-module github.com/anargu/gin_brotli
+module github.com/anargu/gin-brotli
 
 go 1.14
 
