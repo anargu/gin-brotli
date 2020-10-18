@@ -1,4 +1,4 @@
-package gin_brotli
+package gbrotli
 
 import (
 	"fmt"
