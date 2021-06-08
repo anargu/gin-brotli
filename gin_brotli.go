@@ -33,19 +33,25 @@ var (
 	// DefaultCompression Quality: 4 LGWin: 11
 	// from 0-11. 4 will bring the files faster than 11. the higher quality the slower compression time
 	DefaultCompression = Options{
-		Quality: 4,
-		LGWin:   11,
+		WriterOptions: brotli.WriterOptions{
+			Quality: 4,
+			LGWin:   11,
+		},
+		SkipExtensions: []string{".png", ".gif", ".jpeg", ".jpg", ".mp3", ".mp4"},
 	}
 )
 
 // Options is a wrapper for cbrotli.WriterOptions
-type Options brotli.WriterOptions
+type Options struct {
+	brotli.WriterOptions
+	SkipExtensions []string
+}
 
 // Brotli is a middleware function
 func Brotli(options Options) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		if !shouldCompress(c.Request) {
+		if !shouldCompress(c.Request, &options) {
 			return
 		}
 
@@ -66,7 +72,16 @@ func Brotli(options Options) gin.HandlerFunc {
 	}
 }
 
-func shouldCompress(req *http.Request) bool {
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func shouldCompress(req *http.Request, options *Options) bool {
 	if !strings.Contains(req.Header.Get("Accept-Encoding"), "br") ||
 		strings.Contains(req.Header.Get("Connection"), "Upgrade") ||
 		strings.Contains(req.Header.Get("Content-Type"), "text/event-stream") {
@@ -79,10 +94,9 @@ func shouldCompress(req *http.Request) bool {
 		return true
 	}
 
-	switch extension {
-	case ".png", ".gif", ".jpeg", ".jpg", ".mp3", ".mp4":
+	if skip := containsString(options.SkipExtensions, extension); skip {
 		return false
-	default:
+	} else {
 		return true
 	}
 }
