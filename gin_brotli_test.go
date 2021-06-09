@@ -58,6 +58,16 @@ func newServerWithProxy() *gin.Engine {
 
 	router := gin.New()
 	router.Use(Brotli(DefaultCompression))
+	router.GET("/hello.txt", func(c *gin.Context) {
+
+		c.Header("Content-Length", strconv.Itoa(len(testJSONResponse)))
+		c.JSON(http.StatusOK, testResponse)
+	})
+	router.GET("/music.mp4", func(c *gin.Context) {
+
+		c.Header("Content-Length", strconv.Itoa(len(testJSONResponse)))
+		c.JSON(http.StatusOK, testResponse)
+	})
 	router.GET("/", func(c *gin.Context) {
 
 		c.Header("Content-Length", strconv.Itoa(len(testJSONResponse)))
@@ -89,6 +99,59 @@ func newBenchmarkServer() *gin.Engine {
 func TestBrotli(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/", nil)
+	req.Header.Add("Accept-Encoding", "br")
+
+	w := httptest.NewRecorder()
+	r := newServerWithProxy()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, 200)
+	assert.Equal(t, w.Header().Get("Content-Encoding"), "br")
+	assert.Equal(t, w.Header().Get("Vary"), "Accept-Encoding")
+	assert.NotEqual(t, w.Header().Get("Content-Length"), "0")
+	assert.NotEqual(t, len(testResponse), w.Body.Len())
+	assert.Equal(t, fmt.Sprint(w.Body.Len()), w.Header().Get("Content-Length"))
+
+	// fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
+	// fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
+
+	br := brotli.NewReader(w.Body)
+	body, _ := ioutil.ReadAll(br)
+
+	// fmt.Printf("\n+++Test string(body)+++\n%s\n+++\n", string(body))
+	// fmt.Printf("\n+++Test testJSONResponse+++\n%s\n+++\n", testJSONResponse)
+
+	assert.Equal(t, string(body), testJSONResponse)
+}
+
+func TestBrotliWithNotAllowedFiles(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/music.mp4", nil)
+	req.Header.Add("Accept-Encoding", "br")
+
+	w := httptest.NewRecorder()
+	r := newServerWithProxy()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, 200)
+	assert.NotEqual(t, w.Header().Get("Content-Encoding"), "br")
+	assert.NotEqual(t, w.Header().Get("Vary"), "Accept-Encoding")
+	assert.Equal(t, w.Header().Get("Vary"), "")
+	assert.NotEqual(t, w.Header().Get("Content-Length"), "0")
+	assert.Equal(t, len(testJSONResponse), w.Body.Len())
+	assert.Equal(t, fmt.Sprint(w.Body.Len()), w.Header().Get("Content-Length"))
+
+	// fmt.Printf("\n+++Test w.Body.Len()+++\n%v\n+++\n", w.Body.Len())
+	// fmt.Printf("\n+++Test w.Header().Get(\"Content-Length\")+++\n%s\n+++\n", w.Header().Get("Content-Length"))
+
+	// fmt.Printf("\n+++Test string(body)+++\n%s\n+++\n", string(body))
+	// fmt.Printf("\n+++Test testJSONResponse+++\n%s\n+++\n", testJSONResponse)
+
+	assert.Equal(t, w.Body.String(), testJSONResponse)
+}
+func TestBrotliWithAllowedFiles(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/hello.txt", nil)
 	req.Header.Add("Accept-Encoding", "br")
 
 	w := httptest.NewRecorder()
@@ -183,4 +246,12 @@ func TestBrotliWithReverseProxy(t *testing.T) {
 	fmt.Printf("\n+++Test string(body)+++\n%v\n+++\n", string(body))
 	fmt.Printf("\n+++Test testJSONResponse+++\n%v\n+++\n", testReverseResponse)
 	assert.Equal(t, string(body), testReverseResponse)
+}
+
+func TestContainsString(t *testing.T) {
+	list := []string{"A", "B", "C", "D"}
+	expected := containsString(list, "A")
+	assert.Equal(t, expected, true)
+	expected = containsString(list, "X")
+	assert.Equal(t, expected, false)
 }
